@@ -1,0 +1,16 @@
+private void ClearForm()
+{
+    // Dejamos vacíos todos los campos.
+    foreach (var input in inputs)
+        input.Clear();
+
+    // Quitamos la selección actual.
+    selectedId = 0;
+
+    // Volvemos al estado inicial de los botones.
+    saveButton.Enabled = true;
+    updateButton.Enabled = false;
+    deleteButton.Enabled = false;
+
+    grid.ClearSelection();
+} 
