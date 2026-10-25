@@ -1,0 +1,35 @@
+private void InsertRecord()
+{
+    if (!ValidateFields())
+        return;
+
+    try
+    {
+        using var connection = Database.GetConnection();
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            $"INSERT INTO {_table} " +
+            $"({string.Join(", ", _columns)}) " +
+            $"VALUES ({string.Join(", ",
+                _columns.Select(c => "@" + c))})";
+
+        AddParameters(command);
+
+        command.ExecuteNonQuery();
+
+        MessageBox.Show("Registro guardado.");
+
+        LoadRecords();
+        ClearForm();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            "No se pudo guardar. Revisa los datos y las relaciones.\n" +
+            ex.Message
+        );
+    }
+} 
