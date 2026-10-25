@@ -1,0 +1,33 @@
+using Microsoft.Data.Sqlite;
+using System.Data;
+
+namespace SistemaControlClinicoVeterinarioV2;
+
+public class CrudForm : Form
+{
+    private readonly string _table;
+    private readonly string[] _columns;
+    private readonly string[] _labels;
+
+    private readonly string _idColumn = "Id";
+
+    private readonly DataGridView grid = new();
+
+    private readonly TextBox[] inputs;
+    private readonly Label[] fieldLabels;
+
+    private readonly Button saveButton =
+        new() { Text = "Guardar nuevo" };
+
+    private readonly Button updateButton =
+        new() { Text = "Actualizar", Enabled = false };
+
+    private readonly Button deleteButton =
+        new() { Text = "Eliminar", Enabled = false };
+
+    private readonly Button clearButton =
+        new() { Text = "Limpiar" };
+
+    // Guarda el ID de la fila que seleccionó el usuario.
+    private long selectedId = 0;
+}
