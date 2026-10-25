@@ -1,0 +1,50 @@
+private void DeleteRecord()
+{
+    if (selectedId == 0)
+    {
+        MessageBox.Show(
+            "Selecciona un registro primero."
+        );
+        return;
+    }
+
+    var answer = MessageBox.Show(
+        "¿Seguro que deseas eliminar este registro?",
+        "Confirmar",
+        MessageBoxButtons.YesNo,
+        MessageBoxIcon.Question
+    );
+
+    if (answer != DialogResult.Yes)
+        return;
+
+    try
+    {
+        using var connection = Database.GetConnection();
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            $"DELETE FROM {_table} " +
+            $"WHERE {_idColumn} = @Id";
+
+        command.Parameters.AddWithValue(
+            "@Id", selectedId
+        );
+
+        command.ExecuteNonQuery();
+
+        MessageBox.Show("Registro eliminado.");
+
+        LoadRecords();
+        ClearForm();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            "No se puede eliminar. Puede que otro registro " +
+            "lo esté utilizando.\n" + ex.Message
+        );
+    }
+} 
