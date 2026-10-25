@@ -1,0 +1,119 @@
+public CrudForm(
+    string title,
+    string table,
+    string[] columns,
+    string[] labels)
+{
+    _table = table;
+    _columns = columns;
+    _labels = labels;
+
+    inputs = new TextBox[columns.Length];
+    fieldLabels = new Label[columns.Length];
+
+    Text = title;
+    Width = 900;
+    Height = 600;
+    StartPosition = FormStartPosition.CenterParent;
+
+    var main = new TableLayoutPanel
+    {
+        Dock = DockStyle.Fill,
+        ColumnCount = 1,
+        RowCount = 3,
+        Padding = new Padding(12)
+    };
+
+    main.RowStyles.Add(
+        new RowStyle(SizeType.AutoSize));
+
+    main.RowStyles.Add(
+        new RowStyle(SizeType.Percent, 100));
+
+    main.RowStyles.Add(
+        new RowStyle(SizeType.AutoSize));
+
+    Controls.Add(main);
+
+    // Aquí se colocan los campos para escribir.
+    var formPanel = new FlowLayoutPanel
+    {
+        Dock = DockStyle.Top,
+        AutoSize = true,
+        WrapContents = true
+    };
+
+    for (int i = 0; i < columns.Length; i++)
+    {
+        var group = new Panel
+        {
+            Width = 200,
+            Height = 65,
+            Margin = new Padding(4)
+        };
+
+        fieldLabels[i] = new Label
+        {
+            Text = labels[i],
+            Left = 2,
+            Top = 2,
+            Width = 190
+        };
+
+        inputs[i] = new TextBox
+        {
+            Left = 2,
+            Top = 25,
+            Width = 190
+        };
+
+        group.Controls.Add(fieldLabels[i]);
+        group.Controls.Add(inputs[i]);
+
+        formPanel.Controls.Add(group);
+    }
+
+    main.Controls.Add(formPanel, 0, 0);
+
+    // Configuramos la tabla que muestra los registros.
+    grid.Dock = DockStyle.Fill;
+    grid.ReadOnly = true;
+    grid.AllowUserToAddRows = false;
+
+    grid.SelectionMode =
+        DataGridViewSelectionMode.FullRowSelect;
+
+    grid.MultiSelect = false;
+
+    grid.AutoSizeColumnsMode =
+        DataGridViewAutoSizeColumnsMode.Fill;
+
+    grid.CellClick += Grid_CellClick;
+
+    main.Controls.Add(grid, 0, 1);
+
+    // Colocamos los botones en la parte inferior.
+    var buttons = new FlowLayoutPanel
+    {
+        Dock = DockStyle.Fill,
+        AutoSize = true
+    };
+
+    saveButton.Click += (_, _) => InsertRecord();
+    updateButton.Click += (_, _) => UpdateRecord();
+    deleteButton.Click += (_, _) => DeleteRecord();
+    clearButton.Click += (_, _) => ClearForm();
+
+    buttons.Controls.AddRange(new Control[]
+    {
+        saveButton,
+        updateButton,
+        deleteButton,
+        clearButton
+    });
+
+    main.Controls.Add(buttons, 0, 2);
+
+    // Al abrir la ventana, mostramos los registros guardados.
+    LoadRecords();
+}
