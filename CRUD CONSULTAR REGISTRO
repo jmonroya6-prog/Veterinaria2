@@ -1,0 +1,30 @@
+private void LoadRecords()
+{
+    try
+    {
+        using var connection = Database.GetConnection();
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            $"SELECT {_idColumn}, " +
+            $"{string.Join(", ", _columns)} " +
+            $"FROM {_table} ORDER BY {_idColumn} DESC";
+
+        var data = new DataTable();
+
+        using var reader = command.ExecuteReader();
+
+        data.Load(reader);
+
+        grid.DataSource = data;
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            "No se pudieron cargar los registros.\n" +
+            ex.Message
+        );
+    }
+} 
