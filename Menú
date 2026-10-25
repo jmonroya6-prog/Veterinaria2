@@ -1,0 +1,154 @@
+namespace SistemaControlClinicoVeterinarioV2;
+
+public class MainForm : Form
+{
+    public MainForm()
+    {
+        Text = "Sistema de Control Clínico Veterinario v2";
+        Width = 700;
+        Height = 480;
+        StartPosition = FormStartPosition.CenterScreen;
+
+        // Título que aparece en la parte superior.
+        var title = new Label
+        {
+            Text = "Sistema de Control Clínico Veterinario v2",
+            Dock = DockStyle.Top,
+            Height = 75,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = new Font(
+                "Segoe UI", 16, FontStyle.Bold
+            )
+        };
+
+        Controls.Add(title);
+
+        // Texto que orienta al usuario.
+        var note = new Label
+        {
+            Text = "Elige el apartado que deseas administrar.",
+            Dock = DockStyle.Top,
+            Height = 35,
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+
+        Controls.Add(note);
+
+        // Panel donde colocaremos los botones.
+        var menu = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(30),
+            AutoScroll = true
+        };
+
+        Controls.Add(menu);
+
+        // Botón para administrar clientes.
+        AddMenuButton(menu, "Clientes", () =>
+            new CrudForm(
+                "Clientes",
+                "Clientes",
+                new[] { "Nombre", "Telefono", "Correo" },
+                new[] { "Nombre *", "Teléfono", "Correo" }
+            ).ShowDialog()
+        );
+
+        // Botón para administrar mascotas.
+        AddMenuButton(menu, "Mascotas", () =>
+            new CrudForm(
+                "Mascotas",
+                "Mascotas",
+                new[] {
+                    "Nombre", "Especie", "Raza",
+                    "Edad", "ClienteId"
+                },
+                new[] {
+                    "Nombre *", "Especie *", "Raza",
+                    "Edad", "ID del cliente *"
+                }
+            ).ShowDialog()
+        );
+
+        // Botón para administrar veterinarios.
+        AddMenuButton(menu, "Veterinarios", () =>
+            new CrudForm(
+                "Veterinarios",
+                "Veterinarios",
+                new[] {
+                    "Nombre", "Especialidad", "Telefono"
+                },
+                new[] {
+                    "Nombre *", "Especialidad", "Teléfono"
+                }
+            ).ShowDialog()
+        );
+
+        // Botón para administrar citas.
+        AddMenuButton(menu, "Citas", () =>
+            new CrudForm(
+                "Citas",
+                "Citas",
+                new[] {
+                    "Fecha", "Motivo", "Estado",
+                    "MascotaId", "VeterinarioId"
+                },
+                new[] {
+                    "Fecha (AAAA-MM-DD) *", "Motivo",
+                    "Estado *", "ID de mascota *",
+                    "ID de veterinario *"
+                }
+            ).ShowDialog()
+        );
+
+        // Botón para administrar tratamientos.
+        AddMenuButton(menu, "Tratamientos", () =>
+            new CrudForm(
+                "Tratamientos",
+                "Tratamientos",
+                new[] {
+                    "Descripcion", "Medicamento",
+                    "Fecha", "CitaId"
+                },
+                new[] {
+                    "Descripción *", "Medicamento",
+                    "Fecha (AAAA-MM-DD) *", "ID de cita *"
+                }
+            ).ShowDialog()
+        );
+
+        // Botón que muestra una pequeña guía de uso.
+        AddMenuButton(menu, "Ver ayuda", () =>
+            MessageBox.Show(
+                "Orden sugerido para ingresar datos:\n" +
+                "1. Clientes\n" +
+                "2. Mascotas\n" +
+                "3. Veterinarios\n" +
+                "4. Citas\n" +
+                "5. Tratamientos\n\n" +
+                "Usa IDs existentes en los registros relacionados.",
+                "Ayuda del sistema"
+            )
+        );
+    }
+
+    // Este método crea los botones sin repetir tanto código.
+    private static void AddMenuButton(
+        FlowLayoutPanel panel,
+        string text,
+        Action action)
+    {
+        var button = new Button
+        {
+            Text = text,
+            Width = 180,
+            Height = 55,
+            Margin = new Padding(8)
+        };
+
+        // Ejecuta la acción cuando se hace clic.
+        button.Click += (_, _) => action();
+
+        panel.Controls.Add(button);
+    }
+}
