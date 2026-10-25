@@ -1,0 +1,19 @@
+private void AddParameters(SqliteCommand command)
+{
+    for (int i = 0; i < _columns.Length; i++)
+    {
+        string value = inputs[i].Text.Trim();
+
+        // Si la edad está vacía, utilizamos cero.
+        if (_columns[i] == "Edad" && value == "")
+            value = "0";
+
+        // Los campos de texto vacíos se envían como NULL.
+        command.Parameters.AddWithValue(
+            "@" + _columns[i],
+            string.IsNullOrWhiteSpace(value)
+                ? DBNull.Value
+                : value
+        );
+    }
+} 
