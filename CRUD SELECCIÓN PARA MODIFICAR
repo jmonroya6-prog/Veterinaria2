@@ -1,0 +1,27 @@
+private void Grid_CellClick(
+    object? sender,
+    DataGridViewCellEventArgs e)
+{
+    // Si se hace clic en el encabezado, no hacemos nada.
+    if (e.RowIndex < 0)
+        return;
+
+    var row = grid.Rows[e.RowIndex];
+
+    // Guardamos el ID de la fila seleccionada.
+    selectedId = Convert.ToInt64(
+        row.Cells[_idColumn].Value
+    );
+
+    // Copiamos los datos de la tabla a los campos.
+    for (int i = 0; i < _columns.Length; i++)
+    {
+        inputs[i].Text =
+            row.Cells[_columns[i]].Value?.ToString() ?? "";
+    }
+
+    // Ahora sí podemos actualizar o eliminar.
+    saveButton.Enabled = false;
+    updateButton.Enabled = true;
+    deleteButton.Enabled = true;
+} 
