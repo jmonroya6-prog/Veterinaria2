@@ -1,0 +1,30 @@
+private bool ValidateFields()
+{
+    // Comprobamos que el primer campo no esté vacío.
+    if (inputs[0].Text.Trim() == "")
+    {
+        MessageBox.Show(
+            $"El campo {_labels[0]} es obligatorio."
+        );
+
+        inputs[0].Focus();
+        return false;
+    }
+
+    // Si existe el campo Edad, comprobamos que sea numérico.
+    int edadIndex = Array.IndexOf(_columns, "Edad");
+
+    if (edadIndex >= 0 &&
+        inputs[edadIndex].Text.Trim() != "" &&
+        !int.TryParse(inputs[edadIndex].Text, out _))
+    {
+        MessageBox.Show(
+            "La edad debe ser un número entero."
+        );
+
+        inputs[edadIndex].Focus();
+        return false;
+    }
+
+    return true;
+} 
