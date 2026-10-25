@@ -1,1 +1,89 @@
 
+using Microsoft.Data.Sqlite;
+
+namespace SistemaControlClinicoVeterinarioV2;
+
+public static class Database
+{
+    // Aquí guardamos la ubicación del archivo de la base de datos.
+    private static readonly string DbPath =
+        Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory,
+            "clinica_veterinaria.db"
+        );
+
+    // Este método crea una conexión para utilizar SQLite.
+    public static SqliteConnection GetConnection()
+    {
+        return new SqliteConnection(
+            $"Data Source={DbPath};Foreign Keys=True"
+        );
+    }
+
+    // Este método prepara las tablas cuando inicia el programa.
+    public static void Initialize()
+    {
+        using var connection = GetConnection();
+        connection.Open();
+
+        // Activamos las relaciones entre las tablas.
+        using (var pragma = connection.CreateCommand())
+        {
+            pragma.CommandText = "PRAGMA foreign_keys = ON;";
+            pragma.ExecuteNonQuery();
+        }
+
+        string sql = @"
+        CREATE TABLE IF NOT EXISTS Clientes (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Nombre TEXT NOT NULL,
+            Telefono TEXT,
+            Correo TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS Mascotas (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Nombre TEXT NOT NULL,
+            Especie TEXT NOT NULL,
+            Raza TEXT,
+            Edad INTEGER DEFAULT 0,
+            ClienteId INTEGER NOT NULL,
+            FOREIGN KEY (ClienteId)
+                REFERENCES Clientes(Id) ON DELETE RESTRICT
+        );
+
+        CREATE TABLE IF NOT EXISTS Veterinarios (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Nombre TEXT NOT NULL,
+            Especialidad TEXT,
+            Telefono TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS Citas (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Fecha TEXT NOT NULL,
+            Motivo TEXT,
+            Estado TEXT NOT NULL DEFAULT 'Pendiente',
+            MascotaId INTEGER NOT NULL,
+            VeterinarioId INTEGER NOT NULL,
+            FOREIGN KEY (MascotaId)
+                REFERENCES Mascotas(Id) ON DELETE RESTRICT,
+            FOREIGN KEY (VeterinarioId)
+                REFERENCES Veterinarios(Id) ON DELETE RESTRICT
+        );
+
+        CREATE TABLE IF NOT EXISTS Tratamientos (
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Descripcion TEXT NOT NULL,
+            Medicamento TEXT,
+            Fecha TEXT NOT NULL,
+            CitaId INTEGER NOT NULL,
+            FOREIGN KEY (CitaId)
+                REFERENCES Citas(Id) ON DELETE RESTRICT
+        );";
+
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.ExecuteNonQuery();
+    }
+}
