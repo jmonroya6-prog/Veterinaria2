@@ -1,3 +1,4 @@
+
 using Microsoft.Data.Sqlite;
 using System.Data;
 
@@ -8,7 +9,6 @@ public class CrudForm : Form
     private readonly string _table;
     private readonly string[] _columns;
     private readonly string[] _labels;
-
     private readonly string _idColumn = "Id";
 
     private readonly DataGridView grid = new();
@@ -28,6 +28,368 @@ public class CrudForm : Form
     private readonly Button clearButton =
         new() { Text = "Limpiar" };
 
-    // Guarda el ID de la fila que seleccionó el usuario.
     private long selectedId = 0;
+
+    public CrudForm(
+        string title,
+        string table,
+        string[] columns,
+        string[] labels)
+    {
+        _table = table;
+        _columns = columns;
+        _labels = labels;
+
+        inputs = new TextBox[columns.Length];
+        fieldLabels = new Label[columns.Length];
+
+        Text = title;
+        Width = 900;
+        Height = 600;
+        StartPosition = FormStartPosition.CenterParent;
+
+        var main = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(12)
+        };
+
+        main.RowStyles.Add(
+            new RowStyle(SizeType.AutoSize));
+
+        main.RowStyles.Add(
+            new RowStyle(SizeType.Percent, 100));
+
+        main.RowStyles.Add(
+            new RowStyle(SizeType.AutoSize));
+
+        Controls.Add(main);
+
+        // Creamos los campos para ingresar la información.
+        var formPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            WrapContents = true
+        };
+
+        for (int i = 0; i < columns.Length; i++)
+        {
+            var group = new Panel
+            {
+                Width = 200,
+                Height = 65,
+                Margin = new Padding(4)
+            };
+
+            fieldLabels[i] = new Label
+            {
+                Text = labels[i],
+                Left = 2,
+                Top = 2,
+                Width = 190
+            };
+
+            inputs[i] = new TextBox
+            {
+                Left = 2,
+                Top = 25,
+                Width = 190
+            };
+
+            group.Controls.Add(fieldLabels[i]);
+            group.Controls.Add(inputs[i]);
+
+            formPanel.Controls.Add(group);
+        }
+
+        main.Controls.Add(formPanel, 0, 0);
+
+        // Configuramos la tabla donde se ven los registros.
+        grid.Dock = DockStyle.Fill;
+        grid.ReadOnly = true;
+        grid.AllowUserToAddRows = false;
+        grid.SelectionMode =
+            DataGridViewSelectionMode.FullRowSelect;
+        grid.MultiSelect = false;
+        grid.AutoSizeColumnsMode =
+            DataGridViewAutoSizeColumnsMode.Fill;
+
+        grid.CellClick += Grid_CellClick;
+
+        main.Controls.Add(grid, 0, 1);
+
+        // Conectamos los botones con sus respectivos métodos.
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            AutoSize = true
+        };
+
+        saveButton.Click += (_, _) => InsertRecord();
+        updateButton.Click += (_, _) => UpdateRecord();
+        deleteButton.Click += (_, _) => DeleteRecord();
+        clearButton.Click += (_, _) => ClearForm();
+
+        buttons.Controls.AddRange(new Control[]
+        {
+            saveButton,
+            updateButton,
+            deleteButton,
+            clearButton
+        });
+
+        main.Controls.Add(buttons, 0, 2);
+
+        // Cargamos los registros cuando se abre la ventana.
+        LoadRecords();
+    }
+
+    // READ: consultar los registros de la tabla.
+    private void LoadRecords()
+    {
+        try
+        {
+            using var connection = Database.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                $"SELECT {_idColumn}, " +
+                $"{string.Join(", ", _columns)} " +
+                $"FROM {_table} ORDER BY {_idColumn} DESC";
+
+            var data = new DataTable();
+
+            using var reader = command.ExecuteReader();
+
+            data.Load(reader);
+
+            grid.DataSource = data;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "No se pudieron cargar los registros.\n" +
+                ex.Message);
+        }
+    }
+
+    // Cuando hacemos clic en una fila, copiamos sus datos.
+    private void Grid_CellClick(
+        object? sender,
+        DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0)
+            return;
+
+        var row = grid.Rows[e.RowIndex];
+
+        selectedId = Convert.ToInt64(
+            row.Cells[_idColumn].Value);
+
+        for (int i = 0; i < _columns.Length; i++)
+        {
+            inputs[i].Text =
+                row.Cells[_columns[i]].Value?.ToString() ?? "";
+        }
+
+        saveButton.Enabled = false;
+        updateButton.Enabled = true;
+        deleteButton.Enabled = true;
+    }
+
+    // Revisamos algunos datos antes de guardarlos.
+    private bool ValidateFields()
+    {
+        if (inputs[0].Text.Trim() == "")
+        {
+            MessageBox.Show(
+                $"El campo {_labels[0]} es obligatorio.");
+
+            inputs[0].Focus();
+            return false;
+        }
+
+        // Si el formulario tiene Edad, debe ser un entero.
+        int edadIndex = Array.IndexOf(_columns, "Edad");
+
+        if (edadIndex >= 0 &&
+            inputs[edadIndex].Text.Trim() != "" &&
+            !int.TryParse(inputs[edadIndex].Text, out _))
+        {
+            MessageBox.Show(
+                "La edad debe ser un número entero.");
+
+            inputs[edadIndex].Focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    // Preparamos los valores que se enviarán a SQLite.
+    private void AddParameters(SqliteCommand command)
+    {
+        for (int i = 0; i < _columns.Length; i++)
+        {
+            string value = inputs[i].Text.Trim();
+
+            if (_columns[i] == "Edad" && value == "")
+                value = "0";
+
+            command.Parameters.AddWithValue(
+                "@" + _columns[i],
+                string.IsNullOrWhiteSpace(value)
+                    ? DBNull.Value
+                    : value);
+        }
+    }
+
+    // CREATE: guardar un registro nuevo.
+    private void InsertRecord()
+    {
+        if (!ValidateFields())
+            return;
+
+        try
+        {
+            using var connection = Database.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                $"INSERT INTO {_table} " +
+                $"({string.Join(", ", _columns)}) " +
+                $"VALUES ({string.Join(", ",
+                    _columns.Select(c => "@" + c))})";
+
+            AddParameters(command);
+
+            command.ExecuteNonQuery();
+
+            MessageBox.Show("Registro guardado.");
+
+            LoadRecords();
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "No se pudo guardar. Revisa los datos y las relaciones.\n" +
+                ex.Message);
+        }
+    }
+
+    // UPDATE: modificar el registro seleccionado.
+    private void UpdateRecord()
+    {
+        if (selectedId == 0)
+        {
+            MessageBox.Show(
+                "Selecciona un registro de la tabla primero.");
+            return;
+        }
+
+        if (!ValidateFields())
+            return;
+
+        try
+        {
+            using var connection = Database.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                $"UPDATE {_table} SET " +
+                $"{string.Join(", ",
+                    _columns.Select(c => c + " = @" + c))} " +
+                $"WHERE {_idColumn} = @Id";
+
+            AddParameters(command);
+
+            command.Parameters.AddWithValue(
+                "@Id", selectedId);
+
+            command.ExecuteNonQuery();
+
+            MessageBox.Show("Registro actualizado.");
+
+            LoadRecords();
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "No se pudo actualizar.\n" + ex.Message);
+        }
+    }
+
+    // DELETE: eliminar el registro seleccionado.
+    private void DeleteRecord()
+    {
+        if (selectedId == 0)
+        {
+            MessageBox.Show(
+                "Selecciona un registro primero.");
+            return;
+        }
+
+        var answer = MessageBox.Show(
+            "¿Seguro que deseas eliminar este registro?",
+            "Confirmar",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+
+        if (answer != DialogResult.Yes)
+            return;
+
+        try
+        {
+            using var connection = Database.GetConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+
+            command.CommandText =
+                $"DELETE FROM {_table} " +
+                $"WHERE {_idColumn} = @Id";
+
+            command.Parameters.AddWithValue(
+                "@Id", selectedId);
+
+            command.ExecuteNonQuery();
+
+            MessageBox.Show("Registro eliminado.");
+
+            LoadRecords();
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                "No se puede eliminar. Puede que otro registro " +
+                "lo esté utilizando.\n" + ex.Message);
+        }
+    }
+
+    // Limpiamos los campos para ingresar otro registro.
+    private void ClearForm()
+    {
+        foreach (var input in inputs)
+            input.Clear();
+
+        selectedId = 0;
+
+        saveButton.Enabled = true;
+        updateButton.Enabled = false;
+        deleteButton.Enabled = false;
+
+        grid.ClearSelection();
+    }
 }
