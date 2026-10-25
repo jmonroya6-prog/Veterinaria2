@@ -1,0 +1,44 @@
+private void UpdateRecord()
+{
+    if (selectedId == 0)
+    {
+        MessageBox.Show(
+            "Selecciona un registro de la tabla primero."
+        );
+        return;
+    }
+
+    if (!ValidateFields())
+        return;
+
+    try
+    {
+        using var connection = Database.GetConnection();
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            $"UPDATE {_table} SET " +
+            $"{string.Join(", ",
+                _columns.Select(c => c + " = @" + c))} " +
+            $"WHERE {_idColumn} = @Id";
+
+        AddParameters(command);
+
+        command.Parameters.AddWithValue("@Id", selectedId);
+
+        command.ExecuteNonQuery();
+
+        MessageBox.Show("Registro actualizado.");
+
+        LoadRecords();
+        ClearForm();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            "No se pudo actualizar.\n" + ex.Message
+        );
+    }
+}
