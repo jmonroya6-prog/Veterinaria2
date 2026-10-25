@@ -1,0 +1,20 @@
+using System;
+using System.Windows.Forms;
+
+namespace SistemaControlClinicoVeterinarioV2;
+
+internal static class Program
+{
+    [STAThread]
+    static void Main()
+    {
+        // Preparamos las opciones básicas de Windows Forms.
+        ApplicationConfiguration.Initialize();
+
+        // Creamos las tablas antes de abrir la ventana.
+        Database.Initialize();
+
+        // Abrimos el menú principal del sistema.
+        Application.Run(new MainForm());
+    }
+}
